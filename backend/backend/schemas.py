@@ -1,14 +1,19 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 
 class UserSchema(BaseModel):
-    username: str
+    name: str
     email: EmailStr
     matricula: str
     password: str
 
 
 class UserPublic(BaseModel):
-    id: str
-    username: str
+    id: int
+    name: str
     email: EmailStr
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserList(BaseModel):
+    users: list[UserPublic]

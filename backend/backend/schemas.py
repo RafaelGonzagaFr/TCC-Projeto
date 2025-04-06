@@ -1,4 +1,14 @@
+from backend.models import Tipo
 from pydantic import BaseModel, ConfigDict, EmailStr
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class Message(BaseModel):
+    message: str
 
 
 class UserSchema(BaseModel):
@@ -6,6 +16,7 @@ class UserSchema(BaseModel):
     email: EmailStr
     matricula: str
     password: str
+    tipo: Tipo
 
 
 class UserPublic(BaseModel):

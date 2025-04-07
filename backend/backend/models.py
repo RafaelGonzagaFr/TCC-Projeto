@@ -6,6 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column, registry
 
 table_registry = registry()
 
+
 class Tipo(str, Enum):
     professor = 'professor'
     aluno = 'aluno'

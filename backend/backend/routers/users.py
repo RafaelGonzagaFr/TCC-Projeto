@@ -6,10 +6,10 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from backend.security import get_current_user, get_password_hash
 from backend.database import get_session
 from backend.models import User
 from backend.schemas import Message, UserList, UserPublic, UserSchema
+from backend.security import get_current_user, get_password_hash
 
 router = APIRouter(prefix='/users', tags=['users'])
 T_Session = Annotated[Session, Depends(get_session)]
@@ -43,6 +43,7 @@ def create_user(user: UserSchema, session: T_Session):
         email=user.email,
         matricula=user.matricula,
         password=hashed_password,
+        tipo=user.tipo
     )
 
     session.add(db_user)
@@ -51,14 +52,14 @@ def create_user(user: UserSchema, session: T_Session):
 
     return db_user
 
-
 @router.get('/', response_model=UserList)
 def read_users(
+    session: T_Session,
     current_user: T_CurrentUser,
-    session: Session = Depends(get_session),
     limit: int = 10,
     skip: int = 0,
 ):
+    print(current_user)
     if current_user.tipo == 'adm':
         user = session.scalars(select(User).limit(limit).offset(skip))
         return {'users': user}
@@ -69,52 +70,57 @@ def read_users(
 
 
 @router.post('/csv', status_code=HTTPStatus.OK, response_model=Message)
-async def create_users_by_csv_file(current_user: T_CurrentUser, session: T_Session, file: UploadFile = File(...)):
+async def create_users_by_csv_file(
+    current_user: T_CurrentUser,
+    session: T_Session,
+    file: UploadFile = File(...),
+):
     if current_user.tipo == 'adm':
-            if file.filename.endswith('.csv'):
-                contents = await file.read()
+        if file.filename.endswith('.csv'):
+            contents = await file.read()
 
-                with open(file.filename, 'wb') as f:
-                    f.write(contents)
+            with open(file.filename, 'wb', encoding='utf-8') as f:
+                f.write(contents)
 
-                with open(file.filename, newline='') as csvfile:
-                    users = csv.DictReader(csvfile)
-                    for user_in_csv in users:
-                        db_user = session.scalar(
-                            select(User).where(
-                                (User.matricula == user_in_csv['matricula']) | (User.email == user_in_csv['email'])
-                            )
+            with open(file.filename, newline='', encoding='utf-8') as csvfile:
+                users = csv.DictReader(csvfile)
+                for user_in_csv in users:
+                    db_user = session.scalar(
+                        select(User).where(
+                            (User.matricula == user_in_csv['matricula'])
+                            | (User.email == user_in_csv['email'])
                         )
+                    )
 
-                        if db_user:
-                            break
+                    if db_user:
+                        break
 
-                        hashed_password = user_in_csv['password']
+                    hashed_password = user_in_csv['password']
 
-                        if user_in_csv['tipo'].lower() == 'aluno':
-                            db_user = User(
-                                name=user_in_csv['username'],
-                                email=user_in_csv['email'],
-                                password=hashed_password,
-                                matricula=user_in_csv['matricula'],
-                                tipo='aluno'
-                            )
-                        elif user_in_csv['tipo'].lower() == 'professor':
-                            db_user = User(
-                                name=user_in_csv['username'],
-                                email=user_in_csv['email'],
-                                password=hashed_password,
-                                matricula=user_in_csv['matricula'],
-                                tipo='aluno'
-                            )
-                        else:
-                            break
+                    if user_in_csv['tipo'].lower() == 'aluno':
+                        db_user = User(
+                            name=user_in_csv['username'],
+                            email=user_in_csv['email'],
+                            password=hashed_password,
+                            matricula=user_in_csv['matricula'],
+                            tipo='aluno',
+                        )
+                    elif user_in_csv['tipo'].lower() == 'professor':
+                        db_user = User(
+                            name=user_in_csv['username'],
+                            email=user_in_csv['email'],
+                            password=hashed_password,
+                            matricula=user_in_csv['matricula'],
+                            tipo='aluno',
+                        )
+                    else:
+                        break
 
-                        session.add(db_user)
-                        session.commit()
-                        session.refresh(db_user)
+                    session.add(db_user)
+                    session.commit()
+                    session.refresh(db_user)
 
-            return {'message': 'Adição feita'}
+        return {'message': 'Adição feita'}
     else:
         raise HTTPException(
             status_code=HTTPStatus.FORBIDDEN, detail='Not enough permissions'
@@ -128,7 +134,6 @@ def update_user(
     session: T_Session,
     current_user: T_CurrentUser,
 ):
-
     if current_user.tipo != 'adm':
         raise HTTPException(
             status_code=HTTPStatus.FORBIDDEN, detail='Not enough permissions'

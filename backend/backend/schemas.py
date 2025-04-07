@@ -1,5 +1,6 @@
-from backend.models import Tipo
 from pydantic import BaseModel, ConfigDict, EmailStr
+
+from backend.models import Tipo
 
 
 class Token(BaseModel):

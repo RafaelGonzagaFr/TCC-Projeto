@@ -1,4 +1,3 @@
-
 from http import HTTPStatus
 from typing import Annotated
 
@@ -21,18 +20,20 @@ def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     session: Session = Depends(get_session),
 ):
-    user = session.scalar(select(User).where(User.matricula == form_data.username))
+    user = session.scalar(
+        select(User).where(User.matricula == form_data.username)
+    )
 
     if not user:
         raise HTTPException(
             status_code=HTTPStatus.UNAUTHORIZED,
-            detail='Incorrect email or password'
+            detail='Incorrect email or password',
         )
 
     if not verify_password(form_data.password, user.password):
         raise HTTPException(
             status_code=HTTPStatus.UNAUTHORIZED,
-            detail='Incorrect email or password'
+            detail='Incorrect email or password',
         )
 
     access_token = create_access_token(data={'sub': user.email})

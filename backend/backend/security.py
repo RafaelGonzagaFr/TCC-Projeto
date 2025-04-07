@@ -1,16 +1,17 @@
-from base64 import encode
 from datetime import datetime, timedelta
-from backend.models import User
-from backend.database import get_session
 from http import HTTPStatus
-from fastapi import  Depends, HTTPException
 from zoneinfo import ZoneInfo
+
+from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
+from jwt.exceptions import PyJWTError
+from jwt import ExpiredSignatureError, decode, encode
+from pwdlib import PasswordHash
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from jwt import encode, decode, DecodeError
-from pwdlib import PasswordHash
+from backend.database import get_session
+from backend.models import User
 
 SECRET_KEY = 'your-secret-key'  # Isso é provisório, vamos ajustar!
 ALGORITHM = 'HS256'
@@ -26,6 +27,7 @@ def create_access_token(data: dict):
     )
     to_encode.update({'exp': expire})
     encoded_jwt = encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    print(encoded_jwt)
     return encoded_jwt
 
 
@@ -36,31 +38,36 @@ def get_password_hash(password: str):
 def verify_password(plain_password: str, hashed_password: str):
     return pwd_context.verify(plain_password, hashed_password)
 
+
 def get_current_user(
     session: Session = Depends(get_session),
-    token: str = Depends(oauth2_scheme), 
+    token: str = Depends(oauth2_scheme),
 ):
-    credentials_exception = HTTPException(  
+    print(session)
+    print(token)
+    credentials_exception = HTTPException(
         status_code=HTTPStatus.UNAUTHORIZED,
         detail='Could not validate credentials',
         headers={'WWW-Authenticate': 'Bearer'},
     )
 
     try:
-        payload = decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        subject_email = payload.get('sub')
+        payload = decode(
+            token, SECRET_KEY, algorithms=[ALGORITHM]
+        )
+        username: str = payload.get('sub')
+        if not username:
+            raise credentials_exception
 
-        if not subject_email:
-            raise credentials_exception  
+    except ExpiredSignatureError:
+        raise credentials_exception
 
-    except DecodeError:
-        raise credentials_exception  
+    except PyJWTError:
+        raise credentials_exception
 
-    user = session.scalar(
-        select(User).where(User.matricula == subject_email)
-    )
+    user = session.scalar(select(User).where(User.email == username))
 
     if not user:
-        raise credentials_exception  
+        raise credentials_exception
 
     return user

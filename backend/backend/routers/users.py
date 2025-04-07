@@ -20,17 +20,12 @@ T_CurrentUser = Annotated[User, Depends(get_current_user)]
 def create_user(user: UserSchema, session: T_Session):
     db_user = session.scalar(
         select(User).where(
-            (User.matricula == user.matricula) | (User.email == user.email)
+            (User.email == user.email)
         )
     )
 
     if db_user:
-        if db_user.matricula == user.matricula:
-            raise HTTPException(
-                status_code=HTTPStatus.BAD_REQUEST,
-                detail='matricula já existe',
-            )
-        elif db_user.email == user.email:
+        if db_user.email == user.email:
             raise HTTPException(
                 status_code=HTTPStatus.BAD_REQUEST,
                 detail='email já existe',
@@ -41,7 +36,6 @@ def create_user(user: UserSchema, session: T_Session):
     db_user = User(
         name=user.name,
         email=user.email,
-        matricula=user.matricula,
         password=hashed_password,
         tipo=user.tipo
     )
@@ -84,19 +78,11 @@ async def create_users_by_csv_file(
             with open(file.filename, newline='', encoding='utf-8') as csvfile:
                 users = csv.DictReader(csvfile)
                 for user_in_csv in users:
-                    if user_in_csv['tipo'] != 'professor':
-                        db_user = session.scalar(
-                            select(User).where(
-                                (User.matricula == user_in_csv['matricula'])
-                                | (User.email == user_in_csv['email'])
-                            )
+                    db_user = session.scalar(
+                        select(User).where(
+                            (User.email == user_in_csv['email'])
                         )
-                    else:
-                        db_user = session.scalar(
-                            select(User).where(
-                                (User.email == user_in_csv['email'])
-                            )
-                        )
+                    )
 
                     if db_user:
                         break
@@ -108,7 +94,6 @@ async def create_users_by_csv_file(
                             name=user_in_csv['name'],
                             email=user_in_csv['email'],
                             password=hashed_password,
-                            matricula=user_in_csv['matricula'],
                             tipo='aluno',
                         )
                     elif user_in_csv['tipo'].lower() == 'professor':
@@ -116,7 +101,7 @@ async def create_users_by_csv_file(
                             name=user_in_csv['name'],
                             email=user_in_csv['email'],
                             password=hashed_password,
-                            tipo='aluno',
+                            tipo='professor',
                         )
                     else:
                         break
@@ -130,7 +115,7 @@ async def create_users_by_csv_file(
         raise HTTPException(
             status_code=HTTPStatus.FORBIDDEN, detail='Not enough permissions'
         )
-
+    
 
 @router.put('/{user_id}', response_model=UserPublic)
 def update_user(
@@ -147,7 +132,6 @@ def update_user(
     current_user.email = user.email
     current_user.name = user.username
     current_user.password = get_password_hash(user.password)
-    current_user.matricula = user.matricula
 
     session.commit()
     session.refresh(current_user)

@@ -15,7 +15,6 @@ class Message(BaseModel):
 class UserSchema(BaseModel):
     name: str
     email: EmailStr
-    matricula: str
     password: str
     tipo: Tipo
 

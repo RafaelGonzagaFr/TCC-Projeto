@@ -19,7 +19,7 @@ class User:
 
     id: Mapped[int] = mapped_column(init=False, primary_key=True)
     name: Mapped[str]
-    matricula: Mapped[str] = mapped_column(unique=True)
+    matricula: Mapped[str] = mapped_column(unique=True, nullable=True)
     email: Mapped[str] = mapped_column(unique=True)
     password: Mapped[str]
     tipo: Mapped[Tipo]

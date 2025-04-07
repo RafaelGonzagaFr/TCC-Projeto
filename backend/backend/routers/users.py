@@ -59,7 +59,6 @@ def read_users(
     limit: int = 10,
     skip: int = 0,
 ):
-    print(current_user)
     if current_user.tipo == 'adm':
         user = session.scalars(select(User).limit(limit).offset(skip))
         return {'users': user}
@@ -79,18 +78,25 @@ async def create_users_by_csv_file(
         if file.filename.endswith('.csv'):
             contents = await file.read()
 
-            with open(file.filename, 'wb', encoding='utf-8') as f:
+            with open(file.filename, 'wb') as f:
                 f.write(contents)
 
             with open(file.filename, newline='', encoding='utf-8') as csvfile:
                 users = csv.DictReader(csvfile)
                 for user_in_csv in users:
-                    db_user = session.scalar(
-                        select(User).where(
-                            (User.matricula == user_in_csv['matricula'])
-                            | (User.email == user_in_csv['email'])
+                    if user_in_csv['tipo'] != 'professor':
+                        db_user = session.scalar(
+                            select(User).where(
+                                (User.matricula == user_in_csv['matricula'])
+                                | (User.email == user_in_csv['email'])
+                            )
                         )
-                    )
+                    else:
+                        db_user = session.scalar(
+                            select(User).where(
+                                (User.email == user_in_csv['email'])
+                            )
+                        )
 
                     if db_user:
                         break
@@ -99,7 +105,7 @@ async def create_users_by_csv_file(
 
                     if user_in_csv['tipo'].lower() == 'aluno':
                         db_user = User(
-                            name=user_in_csv['username'],
+                            name=user_in_csv['name'],
                             email=user_in_csv['email'],
                             password=hashed_password,
                             matricula=user_in_csv['matricula'],
@@ -107,10 +113,9 @@ async def create_users_by_csv_file(
                         )
                     elif user_in_csv['tipo'].lower() == 'professor':
                         db_user = User(
-                            name=user_in_csv['username'],
+                            name=user_in_csv['name'],
                             email=user_in_csv['email'],
                             password=hashed_password,
-                            matricula=user_in_csv['matricula'],
                             tipo='aluno',
                         )
                     else:

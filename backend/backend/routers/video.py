@@ -15,8 +15,8 @@ T_Session = Annotated[Session, Depends(get_session)]
 T_CurrentUser = Annotated[User, Depends(get_current_user)]
 
 @router.post('/', response_model=VideoPublic)
-def create_video(video: VideoSchema, user: T_CurrentUser, session: T_Session):
-    ...#Lógica para criar video
+def create_video(video: VideoSchema, user: T_CurrentUser, session: T_Session, file: UploadFile = File(...)):
+    ...#Pegar arquivo, postar na aws Bucket, manipular tabela de vídeo, inserir Título, url(provindo da aws), descrição cravar user atual
   
 @router.get('/', response_model=VideoList)
 def get_video_by_current_user(user: T_CurrentUser, session: T_Session):

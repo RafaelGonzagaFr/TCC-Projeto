@@ -18,10 +18,10 @@ T_Session = Annotated[Session, Depends(get_session)]
 T_CurrentUser = Annotated[User, Depends(get_current_user)]
 
 # Caminho para sua chave do Google Cloud
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "gcloud_key.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "gcloud_key.json" #CHAVE DO GOO GLE CLOUD
 
 storage_client = storage.Client() #
-bucket = storage_client.bucket("seu-nome-do-bucket")
+bucket = storage_client.bucket("seu-nome-do-bucket") #BUCKET
 
 @router.post('/', response_model=VideoPublic)
 async def upload_video(video: VideoSchema, user: T_CurrentUser, session: T_Session, file: UploadFile = File(...)):

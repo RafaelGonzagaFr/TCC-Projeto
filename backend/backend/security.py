@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
-from jwt.exceptions import PyJWTError
+from jwt import PyJWTError
 from jwt import ExpiredSignatureError, decode, encode
 from pwdlib import PasswordHash
 from sqlalchemy import select

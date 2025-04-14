@@ -32,7 +32,6 @@ class UserList(BaseModel):
 class VideoSchema(BaseModel):
     title: str
     descricao: str
-    url: str
 
 class VideoPublic(VideoSchema):
     id: int

@@ -23,6 +23,8 @@ os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "gcloud_key.json" #CHAVE DO GOO G
 storage_client = storage.Client() #
 bucket = storage_client.bucket("arandu-bucket-videos") #BUCKET
 
+#ESSA PARTE AQUI É PRA FAZER UPLOAD DO VIDEO
+
 @router.post('/', response_model=VideoPublic)
 async def upload_video(user: T_CurrentUser, session: T_Session, title: str = Form(...), descricao: str = Form(...), file: UploadFile = File(...)):
     if not file.content_type.startswith("video/"):
@@ -39,7 +41,8 @@ async def upload_video(user: T_CurrentUser, session: T_Session, title: str = For
         title=title,
         description=descricao,
         url=blob.public_url,
-        user_id=user.id
+        user_id=user.id,
+        status='analise'
     )
 
     session.add(video)

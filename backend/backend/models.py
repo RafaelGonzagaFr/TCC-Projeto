@@ -12,6 +12,10 @@ class Tipo(str, Enum):
     aluno = 'aluno'
     adm = 'adm'
 
+class Status(str, Enum):
+    analise = 'analise'
+    aprovado = 'aprovado'
+
 
 @table_registry.mapped_as_dataclass
 class User:
@@ -40,6 +44,7 @@ class Video:
     title: Mapped[str]
     description: Mapped[str]
     url: Mapped[str]
+    status: Mapped[Status]
 
     # Relacionamento
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))

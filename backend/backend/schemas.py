@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict, EmailStr
 
-from backend.models import Tipo
+from backend.models import Tipo, Status
 
 
 class Token(BaseModel):
@@ -25,7 +25,6 @@ class UserPublic(BaseModel):
     email: EmailStr
     model_config = ConfigDict(from_attributes=True)
 
-
 class UserList(BaseModel):
     users: list[UserPublic]
 
@@ -35,6 +34,8 @@ class VideoSchema(BaseModel):
 
 class VideoPublic(VideoSchema):
     id: int
+    title: str
+    status: Status
 
 class VideoList(BaseModel):
     videos: list[VideoPublic]

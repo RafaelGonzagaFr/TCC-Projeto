@@ -52,26 +52,51 @@ async def upload_video(user: T_CurrentUser, session: T_Session, title: str = For
     #AJEITAR ESQUEMA COM GOOGLE CLOUD
 
     return video
-  
+
+#TESTAR
 @router.get('/feed', response_model=VideoList)
-def get_video_by_current_user(session: T_Session):
-    videos = session.query(Video).all()
+def get_videos_aprovados(session: T_Session):
+    videos = session.scalar(
+        select(Video).where(
+            (Video.status == 'aprovado')
+        )
+    )
     return videos
 
-##<!-- Feed -->
-##{% for video in videos %}
-##  <div>
-##    <h3>{{ video.title }}</h3>
-##    <video width="320" height="240" controls>
-##      <source src="{{ video.url }}" type="video/mp4">
-##      Seu navegador não suporta vídeos.
-##    </video>
-##    <p>{{ video.descricao }}</p>
-##    <a href="/assistir/{{ video.id }}">Assistir completo</a>
-##  </div>
-##{% endfor %}
+##TESTAAAAARR
+@router.get('/analise', response_model=VideoList)
+def get_videos_analise(user: T_CurrentUser, session: T_Session):
+    if user.tipo == 'professor':
+        videos = session.scalar(
+            select(Video).where(
+                (Video.status == 'analise')
+            )
+        )
 
+        return videos
+    else:
+        raise HTTPException(
+            status_code=HTTPStatus.FORBIDDEN, detail='Not enough permissions'
+        )
 
+##TESTAAAAARR
+@router.put('/aprovar/{video_id}', response_model=Message)
+def mudar_status_video(user: T_CurrentUser, session: T_Session, video_id: int):
+    if user.tipo == 'professor':
+        video = session.scalar(
+            select(Video).where(
+                (Video.id == video_id)
+            )
+        )
+
+        video.status = 'aprovado'
+
+        session.commit()
+        session.refresh(video)
+
+        return {'Status': 'Aprovado'}
+
+##MUDAR ISSO DAQUI
 @router.get("/assistir/{video_id}")
 def assistir_video(video_id: int, session: Session = Depends(get_session)):
     video = session.query(Video).filter(Video.id == video_id).first()
@@ -79,14 +104,7 @@ def assistir_video(video_id: int, session: Session = Depends(get_session)):
         raise HTTPException(status_code=404, detail="Vídeo não encontrado")
     return video
 
-
-##<h1>{{ video.title }}</h1>
-##<video width="640" height="360" controls autoplay>
-##  <source src="{{ video.url }}" type="video/mp4">
-##</video>
-##<p>{{ video.descricao }}</p>
-
-
+##TESTAAAR
 @router.get('/usuario', response_model=VideoList)
 def get_video_by_current_user(user: T_CurrentUser, session: T_Session):
     videos = session.query(Video).filter(Video.user_id == user.id)
